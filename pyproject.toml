@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "neo4j-galaxy-store"
+version = "0.1.0"
+description = "Neo4j graph db of the Samsung Galaxy Store"
+authors = ["Kevin Ramdath <krpent@gmail.com>"]
+repository = "https://github.com/minormending/neo4j-galaxy-store"
+readme = "README.md"
+license = "MIT"
+keywords = ["neo4j", "samsung", "galaxy", "appstore", "graphdb"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+neo4j = "^4.4.3"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+black = "^22.3.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
