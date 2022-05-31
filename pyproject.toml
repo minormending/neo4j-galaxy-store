@@ -11,6 +11,7 @@ keywords = ["neo4j", "samsung", "galaxy", "appstore", "graphdb"]
 [tool.poetry.dependencies]
 python = "^3.10"
 neo4j = "^4.4.3"
+pymongo = "^4.1.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

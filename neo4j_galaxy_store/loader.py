@@ -7,3 +7,10 @@ with Neo4jConnection(uri="bolt://localhost:7687", user="neo4j", passwd="test") a
     pass
 
 
+class MongoLoader:
+    def __init__(self, uri: str) -> None:
+        self.uri = uri
+
+    def categories(self) -> Any:
+        with MongoConnection(self.uri) as conn:
+            pass
