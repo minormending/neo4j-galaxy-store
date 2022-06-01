@@ -11,14 +11,16 @@ class Neo4jConnection:
         self.passwd: str = passwd
         self.driver: BoltDriver = None
 
-    def __enter__(self) -> BoltDriver:
-        self.driver: BoltDriver = GraphDatabase.driver(self.uri, auth=(self.user, self.passwd))
-        return self.driver
+    def __enter__(self) -> "Neo4jConnection":
+        self.driver: BoltDriver = GraphDatabase.driver(
+            self.uri, auth=(self.user, self.passwd)
+        )
+        return self
 
-    def __exit__(self) -> None:
+    def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
         if self.driver:
             self.driver.close()
-    
+
     def query(self, query: str, parameters: Dict[str, Any], db: str) -> None:
         session: Session = None
         try:
