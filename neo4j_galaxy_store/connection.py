@@ -1,5 +1,7 @@
 from typing import Any, Dict
 from neo4j import GraphDatabase, BoltDriver, Session
+from pymongo.database import Database
+from pymongo.mongo_client import MongoClient
 
 
 class Neo4jConnection:
@@ -25,3 +27,16 @@ class Neo4jConnection:
         finally:
             session.close()
 
+
+class MongoConnection:
+    def __init__(self, uri: str) -> None:
+        self.uri: str = uri
+        self.client: MongoClient = None
+
+    def __enter__(self) -> MongoClient:
+        self.client: MongoClient = MongoClient(self.uri)
+        return self.client
+
+    def __exit__(self) -> None:
+        if self.client:
+            self.client.close()
