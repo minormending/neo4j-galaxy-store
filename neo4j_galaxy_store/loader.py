@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Set
 from pymongo.cursor import Cursor
 
 from connection import MongoConnection, Neo4jConnection
@@ -37,6 +37,7 @@ class GalaxyStoreNeo4j:
 
     def setup_constraints(self) -> None:
         with self._get_connection() as conn:
+            # conn.query(f"CREATE DATABASE {self.db} IF NOT EXISTS", parameters=None, db=None)
             conn.query(
                 "CREATE CONSTRAINT categories IF NOT EXISTS ON (c:Category) ASSERT c._id IS UNIQUE",
                 parameters=None,
@@ -55,12 +56,23 @@ class GalaxyStoreNeo4j:
 
     def populate_categories(self, categories: List[Dict[str, Any]]) -> None:
         with self._get_connection() as conn:
-            query: str = """
+            query: str = (
+                """
                 UNWIND $rows AS row
                 MERGE (c:Category {_id: row._id})
+                ON CREATE SET """
+                + self._build_update_query("c", categories)
+                + " ON MATCH SET " + self._build_update_query("c", categories)
+                + """
                 RETURN count(*) as total
             """
+            )
+            print(query)
             return conn.query(query, parameters={"rows": categories}, db=self.db)
+
+    def _build_update_query(self, model_name: str, models: List[Dict[str, Any]]) -> str:
+        keys: Set[str] = set(key for model in models for key in model.keys())
+        return ", ".join(f"{model_name}.{key} = row.{key}" for key in keys)
 
 
 mongo = GalaxyStoreMongoDB("mongodb://localhost:27017")
