@@ -25,3 +25,30 @@ class GalaxyStoreMongoDB:
             yield from cursor
 
 
+class GalaxyStoreNeo4j:
+    def __init__(self, uri: str, user: str, passwd: str) -> None:
+        self.uri: str = uri
+        self.user: str = user
+        self.passwd: str = passwd
+        self.db: str = None  # "samsung_galaxy_store"
+
+    def _get_connection(self) -> Neo4jConnection:
+        return Neo4jConnection(uri=self.uri, user=self.user, passwd=self.passwd)
+
+    def setup_constraints(self) -> None:
+        with self._get_connection() as conn:
+            conn.query(
+                "CREATE CONSTRAINT categories IF NOT EXISTS ON (c:Category) ASSERT c._id IS UNIQUE",
+                parameters=None,
+                db=self.db,
+            )
+            conn.query(
+                "CREATE CONSTRAINT apps IF NOT EXISTS ON (a:App) ASSERT a._id IS UNIQUE",
+                parameters=None,
+                db=self.db,
+            )
+            conn.query(
+                "CREATE CONSTRAINT reviews IF NOT EXISTS ON (r:Review) ASSERT r._id IS UNIQUE",
+                parameters=None,
+                db=self.db,
+            )
