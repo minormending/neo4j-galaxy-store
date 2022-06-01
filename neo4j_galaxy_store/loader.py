@@ -52,3 +52,19 @@ class GalaxyStoreNeo4j:
                 parameters=None,
                 db=self.db,
             )
+
+    def populate_categories(self, categories: List[Dict[str, Any]]) -> None:
+        with self._get_connection() as conn:
+            query: str = """
+                UNWIND $rows AS row
+                MERGE (c:Category {_id: row._id})
+                RETURN count(*) as total
+            """
+            return conn.query(query, parameters={"rows": categories}, db=self.db)
+
+
+mongo = GalaxyStoreMongoDB("mongodb://localhost:27017")
+neo = GalaxyStoreNeo4j(uri="bolt://localhost:7687", user="neo4j", passwd="test")
+neo.setup_constraints()
+total: int = neo.populate_categories(list(mongo.categories()))
+print(total)
