@@ -31,14 +31,17 @@ class Neo4jConnection:
 
 
 class MongoConnection:
-    def __init__(self, uri: str) -> None:
+    def __init__(self, uri: str, db: str) -> None:
         self.uri: str = uri
+        self.db: str = db
         self.client: MongoClient = None
+        self.database: Database = None
 
-    def __enter__(self) -> MongoClient:
+    def __enter__(self) -> Database:
         self.client: MongoClient = MongoClient(self.uri)
-        return self.client
+        self.database: Database = self.client[self.db]
+        return self.database
 
-    def __exit__(self) -> None:
+    def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
         if self.client:
             self.client.close()
