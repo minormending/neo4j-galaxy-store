@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 from neo4j import GraphDatabase, BoltDriver, Session
 from pymongo.database import Database
 from pymongo.mongo_client import MongoClient
@@ -21,7 +21,9 @@ class Neo4jConnection:
         if self.driver:
             self.driver.close()
 
-    def query(self, query: str, parameters: Dict[str, Any], db: str) -> None:
+    def query(
+        self, query: str, parameters: Dict[str, Any], db: str
+    ) -> List[Dict[str, Any]]:
         session: Session = None
         try:
             session: Session = self.driver.session(database=db)
