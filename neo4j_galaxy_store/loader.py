@@ -98,6 +98,28 @@ class GalaxyStoreNeo4j:
 
         return total, total_developers
 
+    def populate_reviews(self, reviews: List[Dict[str, Any]]) -> None:
+        total: int = 0
+        batch_size: int = 1000
+        for idx_start in range(0, len(reviews), batch_size):
+            idx_end = min(idx_start + batch_size, len(reviews))
+            batch: List[Dict[str, Any]] = reviews[idx_start:idx_end]
+
+            relationship: str = f"""
+                WITH row, review
+                MATCH (app:App {{_id: row.app_id}})
+                MERGE (app)-[:FEEDBACK]->(review)
+            """
+
+            total += self._insert_model(
+                "Review",
+                "_id",
+                batch,
+                relationship,
+                ignore=["app_id"],
+            )
+        return total
+
     def _insert_model(
         self,
         model_name: str,
@@ -137,6 +159,9 @@ neo = GalaxyStoreNeo4j(uri="bolt://localhost:7687", user="neo4j", passwd="test")
 neo.setup_constraints()
 total: int = neo.populate_categories(list(mongo.categories()))
 print("categories:", total)
+
+total: int = neo.populate_reviews(list(mongo.reviews()))
+print("reviews:", total)
 
 total: int = neo.populate_apps(list(mongo.apps()))
 print("apps:", total)
