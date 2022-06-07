@@ -88,7 +88,13 @@ class GalaxyStoreNeo4j:
                 MERGE (app)-[:REQUIRES]->(permission)
             """
 
-            total += self._insert_model("App", "_id", batch, relationship, ignore=["developer", "category_id", "permission"])
+            total += self._insert_model(
+                "App",
+                "_id",
+                batch,
+                relationship,
+                ignore=["developer", "category_id", "permissions"],
+            )
 
         return total, total_developers
 
