@@ -66,9 +66,12 @@ class GalaxyStoreNeo4j:
             idx_end = min(idx_start + batch_size, len(apps))
             batch: List[Dict[str, Any]] = apps[idx_start:idx_end]
 
-            developers: List[Dict[str, str]] = [app["developer"] for app in batch if app.get("developer")]
-            if developers:
-                total_developers += self._insert_model("Developer", "name", developers)
+            developers: List[Dict[str, str]] = [
+                app["developer"] for app in batch if app.get("developer")
+            ]
+            total_developers += (
+                self._insert_model("Developer", "name", developers) if developers else 0
+            )
 
             relationship: str = f"""
                 WITH row, app
@@ -89,12 +92,18 @@ class GalaxyStoreNeo4j:
 
         return total, total_developers
 
-    def _insert_model(self, model_name: str, merge_field: str, models: List[Dict[str, str]], relationship: str = "", ignore: List[str] = []) -> None:
+    def _insert_model(
+        self,
+        model_name: str,
+        merge_field: str,
+        models: List[Dict[str, str]],
+        relationship: str = "",
+        ignore: List[str] = [],
+    ) -> None:
         with self._get_connection() as conn:
             name: str = model_name.lower()
             fields: str = self._build_update_query(name, models, ignore)
-            query: str = (
-                f"""
+            query: str = f"""
                 UNWIND $rows AS row
                 MERGE ({name}:{model_name} {{{merge_field}: row.{merge_field}}})
                 ON CREATE SET {fields}
@@ -102,15 +111,18 @@ class GalaxyStoreNeo4j:
                 {relationship}
                 RETURN count(distinct {name}) as total
             """
-            )
             print(query)
             result: List[Dict[str, Any]] = conn.query(
                 query, parameters={"rows": models}, db=self.db
             )
             return result[0]["total"]
 
-    def _build_update_query(self, model_name: str, models: List[Dict[str, Any]], ignore: List[str]) -> str:
-        keys: Set[str] = set(key for model in models for key in model.keys() if key not in ignore)
+    def _build_update_query(
+        self, model_name: str, models: List[Dict[str, Any]], ignore: List[str]
+    ) -> str:
+        keys: Set[str] = set(
+            key for model in models for key in model.keys() if key not in ignore
+        )
         return ", ".join(f"{model_name}.{key} = row.{key}" for key in keys)
 
 
