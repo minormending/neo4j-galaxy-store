@@ -56,22 +56,6 @@ class GalaxyStoreNeo4j:
 
     def populate_categories(self, categories: List[Dict[str, Any]]) -> int:
         return self._insert_model("Category", "_id", categories)
-        with self._get_connection() as conn:
-            fields: str = self._build_update_query("c", categories)
-            query: str = (
-                """
-                UNWIND $rows AS row
-                MERGE (c:Category {_id: row._id})"""
-                + f"""
-                ON CREATE SET {fields}
-                ON MATCH SET {fields}
-                RETURN count(*) as total
-            """
-            )
-            result: List[Dict[str, Any]] = conn.query(
-                query, parameters={"rows": categories}, db=self.db
-            )
-            return result[0]["total"]
 
     def populate_apps(self, apps: List[Dict[str, Any]]) -> None:
         total: int = 0
@@ -82,54 +66,41 @@ class GalaxyStoreNeo4j:
             idx_end = min(idx_start + batch_size, len(apps))
             batch: List[Dict[str, Any]] = apps[idx_start:idx_end]
 
-            developers: List[Dict[str, str]] = [app["developer"] for app in batch if "developer" in app]
-            with self._get_connection() as conn:
-                fields: str = self._build_update_query("d", batch)
-                query: str = (
-                    """
-                    UNWIND $rows AS row
-                    MERGE (d:Developer {name: row.name})"""
-                    + f"""
-                    ON CREATE SET {fields}
-                    ON MATCH SET {fields}
-                    RETURN count(*) as total
-                """
-                )
-                print(query)
-                result: List[Dict[str, Any]] = conn.query(
-                    query, parameters={"rows": developers}, db=self.db
-                )
-                total_developers += result[0]["total"]
+            developers: List[Dict[str, str]] = [app["developer"] for app in batch if app.get("developer")]
+            if developers:
+                total_developers += self._insert_model("Developer", "name", developers)
 
-            with self._get_connection() as conn:
-                fields: str = self._build_update_query("a", batch)
-                query: str = (
-                    """
-                    UNWIND $rows AS row
-                    MERGE (a:App {_id: row._id})"""
-                    + f"""
-                    ON CREATE SET {fields}
-                    ON MATCH SET {fields}
-                    RETURN count(*) as total
-                """
-                )
-                print(query)
-                result: List[Dict[str, Any]] = conn.query(
-                    query, parameters={"rows": batch}, db=self.db
-                )
-                total += result[0]["total"]
-        return total
+            relationship: str = f"""
+                WITH row, app
+                MATCH (developer:Developer {{name: row.developer.name}})
+                MERGE (developer)-[:OWNS]->(app)
 
-    def _insert_model(self, model_name: str, merge_field: str, models: List[Dict[str, str]]) -> None:
+                WITH row, app
+                MATCH (category:Category {{_id: row.category_id}})
+                MERGE (app)-[:IN]->(category)
+
+                WITH row, app
+                UNWIND row.permissions AS p
+                MERGE (permission:Permission {{name: p}})
+                MERGE (app)-[:REQUIRES]->(permission)
+            """
+
+            total += self._insert_model("App", "_id", batch, relationship, ignore=["developer", "category_id", "permission"])
+
+        return total, total_developers
+
+    def _insert_model(self, model_name: str, merge_field: str, models: List[Dict[str, str]], relationship: str = "", ignore: List[str] = []) -> None:
         with self._get_connection() as conn:
-            fields: str = self._build_update_query("i", models)
+            name: str = model_name.lower()
+            fields: str = self._build_update_query(name, models, ignore)
             query: str = (
                 f"""
                 UNWIND $rows AS row
-                MERGE (i:{model_name} {{{merge_field}: row.{merge_field}}})
+                MERGE ({name}:{model_name} {{{merge_field}: row.{merge_field}}})
                 ON CREATE SET {fields}
                 ON MATCH SET {fields}
-                RETURN count(*) as total
+                {relationship}
+                RETURN count(distinct {name}) as total
             """
             )
             print(query)
@@ -138,8 +109,8 @@ class GalaxyStoreNeo4j:
             )
             return result[0]["total"]
 
-    def _build_update_query(self, model_name: str, models: List[Dict[str, Any]]) -> str:
-        keys: Set[str] = set(key for model in models for key in model.keys())
+    def _build_update_query(self, model_name: str, models: List[Dict[str, Any]], ignore: List[str]) -> str:
+        keys: Set[str] = set(key for model in models for key in model.keys() if key not in ignore)
         return ", ".join(f"{model_name}.{key} = row.{key}" for key in keys)
 
 
