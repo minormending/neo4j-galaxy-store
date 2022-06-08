@@ -17,6 +17,6 @@ NEO4J_DATABASE_CONNECT_OPTIONS = {'user':"neo4j", 'passwd':"test"}
 # operations using the other.
 THREADS_PER_PAGE = 2
 
-# Enable protection agains *Cross-site Request Forgery (CSRF)*
+# Enable protection against *Cross-site Request Forgery (CSRF)*
 CSRF_ENABLED     = True
 
