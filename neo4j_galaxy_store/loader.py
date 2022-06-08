@@ -30,14 +30,13 @@ class GalaxyStoreNeo4j:
         self.uri: str = uri
         self.user: str = user
         self.passwd: str = passwd
-        self.db: str = None  # "samsung_galaxy_store"
+        self.db: str = None
 
     def _get_connection(self) -> Neo4jConnection:
         return Neo4jConnection(uri=self.uri, user=self.user, passwd=self.passwd)
 
     def setup_constraints(self) -> None:
         with self._get_connection() as conn:
-            # conn.query(f"CREATE DATABASE {self.db} IF NOT EXISTS", parameters=None, db=None)
             conn.query(
                 "CREATE CONSTRAINT categories IF NOT EXISTS ON (c:Category) ASSERT c._id IS UNIQUE",
                 parameters=None,
@@ -139,17 +138,16 @@ class GalaxyStoreNeo4j:
                 {relationship}
                 RETURN count(distinct {name}) as total
             """
-            print(query)
             result: List[Dict[str, Any]] = conn.query(
                 query, parameters={"rows": models}, db=self.db
             )
             return result[0]["total"]
 
     def _build_update_query(
-        self, model_name: str, models: List[Dict[str, Any]], ignore: List[str]
+        self, model_name: str, models: List[Dict[str, Any]], ignore_fields: List[str]
     ) -> str:
         keys: Set[str] = set(
-            key for model in models for key in model.keys() if key not in ignore
+            key for model in models for key in model.keys() if key not in ignore_fields
         )
         return ", ".join(f"{model_name}.{key} = row.{key}" for key in keys)
 
