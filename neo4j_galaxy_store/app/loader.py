@@ -155,11 +155,11 @@ class GalaxyStoreNeo4j:
 mongo = GalaxyStoreMongoDB("mongodb://localhost:27017")
 neo = GalaxyStoreNeo4j(uri="bolt://localhost:7687", user="neo4j", passwd="test")
 neo.setup_constraints()
-total: int = neo.populate_categories(list(mongo.categories()))
-print("categories:", total)
+# total: int = neo.populate_categories(list(mongo.categories()))
+# print("categories:", total)
+
+# total: int = neo.populate_apps(list(mongo.apps()))
+# print("apps:", total)
 
 total: int = neo.populate_reviews(list(mongo.reviews()))
 print("reviews:", total)
-
-total: int = neo.populate_apps(list(mongo.apps()))
-print("apps:", total)
